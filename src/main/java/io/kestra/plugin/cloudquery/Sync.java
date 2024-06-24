@@ -104,9 +104,7 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
         description = "A list of CloudQuery configurations or files containing CloudQuery configurations.",
         anyOf = {String[].class, Map[].class}
     )
-    @PluginProperty(
-        dynamic = false
-    )
+    @PluginProperty
     @NotNull
     private List<Object> configs;
 
@@ -129,8 +127,9 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
     public ScriptOutput run(RunContext runContext) throws Exception {
         CommandsWrapper commands = new CommandsWrapper(runContext)
             .withWarningOnStdErr(true)
-            .withRunnerType(RunnerType.DOCKER)
             .withDockerOptions(injectDefaults(getDocker()))
+            .withTaskRunner(this.getTaskRunner())
+            .withContainerImage(this.getContainerImage())
             .withEnv(this.getEnv())
             .withNamespaceFiles(namespaceFiles)
             .withInputFiles(inputFiles)
