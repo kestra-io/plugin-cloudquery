@@ -92,8 +92,9 @@ public class CloudQueryCLI extends AbstractCloudQueryCommand implements Runnable
     public ScriptOutput run(RunContext runContext) throws Exception {
         CommandsWrapper commands = new CommandsWrapper(runContext)
             .withWarningOnStdErr(true)
-            .withRunnerType(RunnerType.DOCKER)
             .withDockerOptions(injectDefaults(getDocker()))
+            .withTaskRunner(this.getTaskRunner())
+            .withContainerImage(this.getContainerImage())
             .withCommands(
                 ScriptService.scriptCommands(
                     List.of("/bin/sh", "-c"),
@@ -110,6 +111,10 @@ public class CloudQueryCLI extends AbstractCloudQueryCommand implements Runnable
 
     @Override
     protected DockerOptions injectDefaults(DockerOptions original) {
+        if (original == null) {
+            return null;
+        }
+
         if (original.getEntryPoint() == null || original.getEntryPoint().isEmpty()) {
             original = original.toBuilder().entryPoint(List.of("")).build();
         }
