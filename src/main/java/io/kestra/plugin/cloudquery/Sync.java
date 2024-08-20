@@ -9,8 +9,8 @@ import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.*;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.JacksonMapper;
+import io.kestra.core.storages.StorageContext;
 import io.kestra.core.utils.IdUtils;
-import io.kestra.plugin.scripts.exec.scripts.models.RunnerType;
 import io.kestra.plugin.scripts.exec.scripts.models.ScriptOutput;
 import io.kestra.plugin.scripts.exec.scripts.runners.CommandsWrapper;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -140,7 +140,11 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
         File incrementalDBFile = new File(workingDirectory + "/" + DB_FILENAME);
 
         try {
-            InputStream taskCacheFile = runContext.storage().getTaskStateFile(CLOUD_QUERY_STATE, DB_FILENAME);
+            InputStream taskCacheFile = runContext.stateStore().getState(
+                CLOUD_QUERY_STATE,
+                DB_FILENAME,
+                runContext.storage().getTaskStorageContext().map(StorageContext.Task::getTaskRunValue).orElse(null)
+            );
             Files.copy(taskCacheFile, incrementalDBFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (FileNotFoundException exception) {
             if (!incrementalDBFile.createNewFile()) {
@@ -167,7 +171,14 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
         );
 
         ScriptOutput run = commands.run();
-        runContext.storage().putTaskStateFile(incrementalDBFile, CLOUD_QUERY_STATE, DB_FILENAME);
+        try (FileInputStream fis = new FileInputStream(incrementalDBFile)) {
+            runContext.stateStore().putState(
+                CLOUD_QUERY_STATE,
+                DB_FILENAME,
+                runContext.storage().getTaskStorageContext().map(StorageContext.Task::getTaskRunValue).orElse(null),
+                fis.readAllBytes()
+            );
+        }
         return run;
     }
 
