@@ -109,8 +109,8 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
     private List<Object> configs;
 
     @Schema(
-        title = "Whether to use Kestra's internal backend to save incremental index.",
-        description = "Kestra can automatically add a backend option to your sources and same incremental indexes in the internal storage. " +
+        title = "Whether to use Kestra's internal KV Store backend to save incremental index.",
+        description = "Kestra can automatically add a backend option to your sources and store the incremental indexes in the KV Store. " +
             "Use this boolean to activate this option."
     )
     @PluginProperty
