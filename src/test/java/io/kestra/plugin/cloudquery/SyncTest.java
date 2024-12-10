@@ -1,5 +1,6 @@
 package io.kestra.plugin.cloudquery;
 
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.IdUtils;
@@ -49,11 +50,11 @@ class SyncTest {
         Sync execute = Sync.builder()
             .id(IdUtils.create())
             .type(Sync.class.getName())
-            .env(Map.of(
+            .env(Property.of(Map.of(
                 "AWS_ACCESS_KEY_ID", localstack.getAccessKey(),
                 "AWS_SECRET_ACCESS_KEY", localstack.getSecretKey(),
                 "AWS_DEFAULT_REGION", localstack.getRegion()
-            ))
+            )))
             .configs(List.of(
                 Map.of(
                     "kind", "destination",
@@ -87,7 +88,7 @@ class SyncTest {
                     )
                 )
             ))
-            .incremental(false)// TODO Disabled incremental as there is a bug with sqlite inside cloudquery docker
+            .incremental(Property.of(false))// TODO Disabled incremental as there is a bug with sqlite inside cloudquery docker
             .docker(DockerOptions.builder()
                 // needed to be able to reach localstack from inside the container
                 .networkMode("host")

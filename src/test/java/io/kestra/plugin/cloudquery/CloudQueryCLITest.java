@@ -1,5 +1,6 @@
 package io.kestra.plugin.cloudquery;
 
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.IdUtils;
@@ -31,7 +32,7 @@ class CloudQueryCLITest {
         CloudQueryCLI execute = CloudQueryCLI.builder()
             .id(IdUtils.create())
             .type(CloudQueryCLI.class.getName())
-            .env(Map.of("{{ inputs.envKey }}", "{{ inputs.envValue }}"))
+            .env(Property.of(Map.of("{{ inputs.envKey }}", "{{ inputs.envValue }}")))
             .commands(List.of(
                 "echo \"::{\\\"outputs\\\":{" +
                     "\\\"customEnv\\\":\\\"$" + envKey + "\\\"" +
