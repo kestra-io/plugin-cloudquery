@@ -18,6 +18,8 @@ import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 import jakarta.validation.constraints.NotEmpty;
+
+import java.util.HashMap;
 import java.util.List;
 
 @SuperBuilder
@@ -94,7 +96,7 @@ public class CloudQueryCLI extends AbstractCloudQueryCommand implements Runnable
             .withWarningOnStdErr(true)
             .withDockerOptions(injectDefaults(getDocker()))
             .withTaskRunner(this.getTaskRunner())
-            .withContainerImage(this.getContainerImage())
+            .withContainerImage(runContext.render(this.getContainerImage()).as(String.class).orElseThrow())
             .withCommands(
                 ScriptService.scriptCommands(
                     List.of("/bin/sh", "-c"),
@@ -102,7 +104,7 @@ public class CloudQueryCLI extends AbstractCloudQueryCommand implements Runnable
                     this.commands
                 )
             )
-            .withEnv(this.getEnv())
+            .withEnv(runContext.render(this.getEnv()).asMap(String.class, String.class).isEmpty() ? new HashMap<>() : runContext.render(this.getEnv()).asMap(String.class, String.class))
             .withInputFiles(inputFiles)
             .withOutputFiles(outputFiles);
 

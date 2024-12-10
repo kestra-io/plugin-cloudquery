@@ -1,6 +1,7 @@
 package io.kestra.plugin.cloudquery;
 
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.models.tasks.runners.TaskRunner;
 import io.kestra.plugin.scripts.exec.scripts.models.DockerOptions;
@@ -25,11 +26,7 @@ abstract class AbstractCloudQueryCommand extends Task {
     @Schema(
         title = "Additional environment variables for the CloudQuery process."
     )
-    @PluginProperty(
-        additionalProperties = String.class,
-        dynamic = true
-    )
-    protected Map<String, String> env;
+    protected Property<Map<String, String>> env;
 
     @Schema(
         title = "Deprecated, use 'taskRunner' instead"
@@ -53,9 +50,8 @@ abstract class AbstractCloudQueryCommand extends Task {
         .build();
 
     @Schema(title = "The task runner container image, only used if the task runner is container-based.")
-    @PluginProperty(dynamic = true)
     @Builder.Default
-    private String containerImage = DEFAULT_IMAGE;
+    private Property<String> containerImage = Property.of(DEFAULT_IMAGE);
 
     protected DockerOptions injectDefaults(DockerOptions original) {
         if (original == null) {

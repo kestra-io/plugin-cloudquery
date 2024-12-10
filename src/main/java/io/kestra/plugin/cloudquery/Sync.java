@@ -6,6 +6,7 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.*;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.JacksonMapper;
@@ -113,9 +114,8 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
         description = "Kestra can automatically add a backend option to your sources and store the incremental indexes in the KV Store. " +
             "Use this boolean to activate this option."
     )
-    @PluginProperty
     @Builder.Default
-    private boolean incremental = false;
+    private Property<Boolean> incremental = Property.of(false);
 
     private NamespaceFiles namespaceFiles;
 
@@ -129,12 +129,12 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
             .withWarningOnStdErr(true)
             .withDockerOptions(injectDefaults(getDocker()))
             .withTaskRunner(this.getTaskRunner())
-            .withContainerImage(this.getContainerImage())
-            .withEnv(this.getEnv())
+            .withContainerImage(runContext.render(this.getContainerImage()).as(String.class).orElseThrow())
+            .withEnv(runContext.render(this.getEnv()).asMap(String.class, String.class).isEmpty() ? new HashMap<>() : runContext.render(this.getEnv()).asMap(String.class, String.class))
             .withNamespaceFiles(namespaceFiles)
             .withInputFiles(inputFiles)
             .withOutputFiles(outputFiles);
-        
+
         Path workingDirectory = commands.getWorkingDirectory();
 
         File incrementalDBFile = new File(workingDirectory + "/" + DB_FILENAME);
@@ -154,7 +154,7 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
 
         Map<String, Object> backendOptionsObject = getBackendOptionObject();
         List<Map<String, Object>> configs = readConfigs(runContext, this.configs, backendOptionsObject);
-        if (incremental) {
+        if (runContext.render(incremental).as(Boolean.class).orElseThrow()) {
             configs.add(getIncrementalSqliteDestination());
         }
 
@@ -221,7 +221,7 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
             }
 
 
-            if (incremental && Objects.equals(result.get("kind"), "source")) {
+            if (runContext.render(incremental).as(Boolean.class).orElseThrow() && Objects.equals(result.get("kind"), "source")) {
                 if (result.containsKey("spec")) {
                     Map<String, Object> spec = (Map<String, Object>) result.get("spec");
                     if (!spec.containsKey("backend_options")) {
