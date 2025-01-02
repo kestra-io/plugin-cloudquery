@@ -3,6 +3,7 @@ package io.kestra.plugin.cloudquery;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.*;
 import io.kestra.core.models.tasks.runners.ScriptService;
 import io.kestra.core.runners.RunContext;
@@ -88,10 +89,11 @@ public class CloudQueryCLI extends AbstractCloudQueryCommand implements Runnable
 
     private Object inputFiles;
 
-    private List<String> outputFiles;
+    private Property<List<String>> outputFiles;
 
     @Override
     public ScriptOutput run(RunContext runContext) throws Exception {
+        var renderedOutputFiles = runContext.render(this.outputFiles).asList(String.class);
         CommandsWrapper commands = new CommandsWrapper(runContext)
             .withWarningOnStdErr(true)
             .withDockerOptions(injectDefaults(getDocker()))
@@ -106,7 +108,7 @@ public class CloudQueryCLI extends AbstractCloudQueryCommand implements Runnable
             )
             .withEnv(runContext.render(this.getEnv()).asMap(String.class, String.class).isEmpty() ? new HashMap<>() : runContext.render(this.getEnv()).asMap(String.class, String.class))
             .withInputFiles(inputFiles)
-            .withOutputFiles(outputFiles);
+            .withOutputFiles(renderedOutputFiles.isEmpty() ? null : renderedOutputFiles);
 
         return commands.run();
     }

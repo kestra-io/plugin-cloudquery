@@ -121,10 +121,12 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
 
     private Object inputFiles;
 
-    private List<String> outputFiles;
+    private Property<List<String>> outputFiles;
 
     @Override
     public ScriptOutput run(RunContext runContext) throws Exception {
+        var renderedOutputFiles = runContext.render(this.outputFiles).asList(String.class);
+
         CommandsWrapper commands = new CommandsWrapper(runContext)
             .withWarningOnStdErr(true)
             .withDockerOptions(injectDefaults(getDocker()))
@@ -133,7 +135,7 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
             .withEnv(runContext.render(this.getEnv()).asMap(String.class, String.class).isEmpty() ? new HashMap<>() : runContext.render(this.getEnv()).asMap(String.class, String.class))
             .withNamespaceFiles(namespaceFiles)
             .withInputFiles(inputFiles)
-            .withOutputFiles(outputFiles);
+            .withOutputFiles(renderedOutputFiles.isEmpty() ? null : renderedOutputFiles);
 
         Path workingDirectory = commands.getWorkingDirectory();
 
