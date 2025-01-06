@@ -12,7 +12,6 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 @SuperBuilder
@@ -44,7 +43,7 @@ abstract class AbstractCloudQueryCommand extends Task {
     @PluginProperty
     @Builder.Default
     @Valid
-    private TaskRunner taskRunner = Docker.builder()
+    private TaskRunner<?> taskRunner = Docker.builder()
         .type(Docker.class.getName())
         .entryPoint(Collections.emptyList())
         .build();
