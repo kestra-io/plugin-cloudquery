@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static io.kestra.core.utils.Rethrow.throwConsumer;
 
@@ -168,9 +169,7 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
             cmds.add(confFile.getName());
         }));
 
-        commands = commands.withCommands(
-            cmds
-        );
+        commands = commands.withCommands(Property.of(cmds));
 
         ScriptOutput run = commands.run();
         try (FileInputStream fis = new FileInputStream(incrementalDBFile)) {

@@ -12,6 +12,7 @@ import io.kestra.plugin.scripts.exec.scripts.models.RunnerType;
 import io.kestra.plugin.scripts.exec.scripts.models.ScriptOutput;
 import io.kestra.plugin.scripts.exec.scripts.runners.CommandsWrapper;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -81,9 +82,8 @@ public class CloudQueryCLI extends AbstractCloudQueryCommand implements Runnable
     @Schema(
         title = "List of CloudQuery commands to run."
     )
-    @PluginProperty(dynamic = true)
-    @NotEmpty
-    protected List<String> commands;
+    @NotNull
+    protected Property<List<String>> commands;
 
     private NamespaceFiles namespaceFiles;
 
@@ -99,13 +99,9 @@ public class CloudQueryCLI extends AbstractCloudQueryCommand implements Runnable
             .withDockerOptions(injectDefaults(getDocker()))
             .withTaskRunner(this.getTaskRunner())
             .withContainerImage(runContext.render(this.getContainerImage()).as(String.class).orElseThrow())
-            .withCommands(
-                ScriptService.scriptCommands(
-                    List.of("/bin/sh", "-c"),
-                    List.of("alias cloudquery='/app/cloudquery'"),
-                    this.commands
-                )
-            )
+            .withInterpreter(Property.of(List.of("/bin/sh", "-c")))
+            .withBeforeCommands(Property.of(List.of("alias cloudquery='/app/cloudquery'")))
+            .withCommands(this.commands)
             .withEnv(runContext.render(this.getEnv()).asMap(String.class, String.class).isEmpty() ? new HashMap<>() : runContext.render(this.getEnv()).asMap(String.class, String.class))
             .withInputFiles(inputFiles)
             .withOutputFiles(renderedOutputFiles.isEmpty() ? null : renderedOutputFiles);
