@@ -33,12 +33,12 @@ class CloudQueryCLITest {
             .id(IdUtils.create())
             .type(CloudQueryCLI.class.getName())
             .env(Property.of(Map.of("{{ inputs.envKey }}", "{{ inputs.envValue }}")))
-            .commands(List.of(
+            .commands(TestsUtils.propertyFromList(List.of(
                 "echo \"::{\\\"outputs\\\":{" +
                     "\\\"customEnv\\\":\\\"$" + envKey + "\\\"" +
                     "}}::\"",
                 "cloudquery --version --log-console"
-            ))
+            )))
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, execute, Map.of("envKey", envKey, "envValue", envValue));
