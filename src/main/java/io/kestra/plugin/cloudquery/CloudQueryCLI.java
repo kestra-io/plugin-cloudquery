@@ -30,7 +30,7 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Execute CloudQuery commands from a CLI."
+    title = "Execute a CloudQuery command from CLI."
 )
 @Plugin(
     examples = {
