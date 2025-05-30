@@ -32,7 +32,7 @@ class CloudQueryCLITest {
         CloudQueryCLI execute = CloudQueryCLI.builder()
             .id(IdUtils.create())
             .type(CloudQueryCLI.class.getName())
-            .env(Property.of(Map.of("{{ inputs.envKey }}", "{{ inputs.envValue }}")))
+            .env(Property.ofValue(Map.of("{{ inputs.envKey }}", "{{ inputs.envValue }}")))
             .commands(TestsUtils.propertyFromList(List.of(
                 "echo \"::{\\\"outputs\\\":{" +
                     "\\\"customEnv\\\":\\\"$" + envKey + "\\\"" +
