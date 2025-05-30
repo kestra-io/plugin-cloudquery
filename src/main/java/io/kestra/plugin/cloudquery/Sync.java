@@ -116,7 +116,7 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
             "Use this boolean to activate this option."
     )
     @Builder.Default
-    private Property<Boolean> incremental = Property.of(false);
+    private Property<Boolean> incremental = Property.ofValue(false);
 
     private NamespaceFiles namespaceFiles;
 
@@ -169,7 +169,7 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
             cmds.add(confFile.getName());
         }));
 
-        commands = commands.withCommands(Property.of(cmds));
+        commands = commands.withCommands(Property.ofValue(cmds));
 
         ScriptOutput run = commands.run();
         try (FileInputStream fis = new FileInputStream(incrementalDBFile)) {

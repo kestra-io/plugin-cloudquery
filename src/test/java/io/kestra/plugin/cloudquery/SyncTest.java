@@ -50,7 +50,7 @@ class SyncTest {
         Sync execute = Sync.builder()
             .id(IdUtils.create())
             .type(Sync.class.getName())
-            .env(Property.of(Map.of(
+            .env(Property.ofValue(Map.of(
                 "AWS_ACCESS_KEY_ID", localstack.getAccessKey(),
                 "AWS_SECRET_ACCESS_KEY", localstack.getSecretKey(),
                 "AWS_DEFAULT_REGION", localstack.getRegion()
@@ -88,7 +88,7 @@ class SyncTest {
                     )
                 )
             ))
-            .incremental(Property.of(false))// TODO Disabled incremental as there is a bug with sqlite inside cloudquery docker
+            .incremental(Property.ofValue(false))// TODO Disabled incremental as there is a bug with sqlite inside cloudquery docker
             .docker(DockerOptions.builder()
                 // needed to be able to reach localstack from inside the container
                 .networkMode("host")
