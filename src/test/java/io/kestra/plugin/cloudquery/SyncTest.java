@@ -8,6 +8,7 @@ import io.kestra.core.utils.TestsUtils;
 import io.kestra.plugin.scripts.exec.scripts.models.DockerOptions;
 import io.kestra.plugin.scripts.exec.scripts.models.ScriptOutput;
 import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.plugin.scripts.runner.docker.Docker;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -16,6 +17,7 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -89,9 +91,11 @@ class SyncTest {
                 )
             ))
             .incremental(Property.ofValue(false))// TODO Disabled incremental as there is a bug with sqlite inside cloudquery docker
-            .docker(DockerOptions.builder()
+            .taskRunner(Docker.builder()
+                    .type(Docker.class.getName())
                 // needed to be able to reach localstack from inside the container
                 .networkMode("host")
+                .entryPoint(Collections.emptyList())
                 .build())
             .build();
 

@@ -98,7 +98,7 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
 )
 public class Sync extends AbstractCloudQueryCommand implements RunnableTask<ScriptOutput>, NamespaceFilesInterface, InputFilesInterface, OutputFilesInterface {
     private static final ObjectMapper OBJECT_MAPPER = JacksonMapper.ofYaml();
-    private static final String DB_FILENAME = "icrementaldb.sqlite";
+    private static final String DB_FILENAME = "incrementaldb.sqlite";
     private static final String CLOUD_QUERY_STATE = "CloudQueryState";
 
     @Schema(
@@ -124,12 +124,18 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
 
     private Property<List<String>> outputFiles;
 
+    @Schema(
+        title = "Enable console logging",
+        description = "Whether to enable verbose console logging from CloudQuery."
+    )
+    @Builder.Default
+    private Property<Boolean> logConsole = Property.ofValue(true);
+
     @Override
     public ScriptOutput run(RunContext runContext) throws Exception {
         var renderedOutputFiles = runContext.render(this.outputFiles).asList(String.class);
 
         CommandsWrapper commands = new CommandsWrapper(runContext)
-            .withWarningOnStdErr(true)
             .withDockerOptions(injectDefaults(getDocker()))
             .withTaskRunner(this.getTaskRunner())
             .withContainerImage(runContext.render(this.getContainerImage()).as(String.class).orElseThrow())
@@ -161,13 +167,17 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
             configs.add(getIncrementalSqliteDestination());
         }
 
+        List<String> cmds = new ArrayList<>(List.of("/app/cloudquery", "sync"));
 
-        List<String> cmds = new ArrayList<>(List.of("sync"));
         configs.forEach(throwConsumer(config -> {
             File confFile = new File(workingDirectory + "/" + IdUtils.create() + ".yml");
             OBJECT_MAPPER.writeValue(confFile, config);
             cmds.add(confFile.getName());
         }));
+
+        if (runContext.render(logConsole).as(Boolean.class).orElse(false)) {
+            cmds.add("--log-console");
+        }
 
         commands = commands.withCommands(Property.ofValue(cmds));
 
