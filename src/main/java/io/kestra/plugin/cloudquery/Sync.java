@@ -104,7 +104,7 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
     @Schema(
         title = "CloudQuery configurations.",
         description = "A list of CloudQuery configurations or files containing CloudQuery configurations.",
-        anyOf = {String[].class, Map[].class}
+        anyOf = { String.class, List.class, Map.class }
     )
     @PluginProperty
     @NotNull
