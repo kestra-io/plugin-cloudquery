@@ -16,7 +16,9 @@ import io.kestra.core.storages.kv.KVEntry;
 import io.kestra.core.storages.kv.KVStore;
 import io.kestra.core.storages.kv.KVValue;
 import io.kestra.core.storages.kv.KVValueAndMetadata;
+import io.kestra.core.utils.Hashing;
 import io.kestra.core.utils.IdUtils;
+import io.kestra.core.utils.Slugify;
 import io.kestra.plugin.scripts.exec.scripts.models.ScriptOutput;
 import io.kestra.plugin.scripts.exec.scripts.runners.CommandsWrapper;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -135,6 +137,16 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
     )
     @Builder.Default
     private Property<Boolean> logConsole = Property.ofValue(true);
+    
+    private String computeKVEntryName(RunContext runContext, String stateName, String taskRunValue) {
+        String separator = "_";
+        boolean flowScoped = true;
+        boolean hashTaskRunValue = true;
+
+        String flowId = runContext.flowInfo().id();
+        String flowIdPrefix = (!flowScoped || flowId == null) ? "" : (Slugify.of(flowId) + separator);
+        return flowIdPrefix + "states" + separator + stateName + (taskRunValue == null ? "" : (separator + (hashTaskRunValue ? Hashing.hashToString(taskRunValue) : taskRunValue)));
+    }
 
     @Override
     public ScriptOutput run(RunContext runContext) throws Exception {
@@ -154,8 +166,11 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
         File incrementalDBFile = new File(workingDirectory + "/" + DB_FILENAME);
 
         try {
-            KVStore kvStore = runContext.namespaceKv("");
-            Optional<KVValue> kvValue = kvStore.getValue(DB_FILENAME);
+            String taskRunValue = runContext.storage().getTaskStorageContext().map(StorageContext.Task::getTaskRunValue).orElse(null);
+            String kvEntryName = computeKVEntryName(runContext, CLOUD_QUERY_STATE, taskRunValue);
+
+            KVStore kvStore = runContext.namespaceKv(runContext.flowInfo().namespace());
+            Optional<KVValue> kvValue = kvStore.getValue(kvEntryName);
 
             if (kvValue.isPresent() && kvValue.get().value() != null) {
                 Object value = kvValue.get().value();
@@ -202,9 +217,12 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
 
         ScriptOutput run = commands.run();
         try (FileInputStream fis = new FileInputStream(incrementalDBFile)) {
-            KVStore kvStore = runContext.namespaceKv("");
+            String taskRunValue = runContext.storage().getTaskStorageContext().map(StorageContext.Task::getTaskRunValue).orElse(null);
+            String kvEntryName = computeKVEntryName(runContext, CLOUD_QUERY_STATE, taskRunValue);
+
+            KVStore kvStore = runContext.namespaceKv(runContext.flowInfo().namespace());
             byte[] dbBytes = fis.readAllBytes();
-            kvStore.put(DB_FILENAME, new KVValueAndMetadata(null, dbBytes));
+            kvStore.put(kvEntryName, new KVValueAndMetadata(null, dbBytes));
         }
         return run;
     }
