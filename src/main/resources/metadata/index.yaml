@@ -1,0 +1,8 @@
+group: io.kestra.plugin.cloudquery
+name: "cloudquery"
+title: "CloudQuery"
+description: "This sub-group of plugins contains tasks for using CloudQuery CLI."
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"
