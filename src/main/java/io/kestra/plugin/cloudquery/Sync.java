@@ -6,12 +6,19 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.kv.KVType;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.*;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.core.storages.StorageContext;
+import io.kestra.core.storages.kv.KVEntry;
+import io.kestra.core.storages.kv.KVStore;
+import io.kestra.core.storages.kv.KVValue;
+import io.kestra.core.storages.kv.KVValueAndMetadata;
+import io.kestra.core.utils.Hashing;
 import io.kestra.core.utils.IdUtils;
+import io.kestra.core.utils.Slugify;
 import io.kestra.plugin.scripts.exec.scripts.models.ScriptOutput;
 import io.kestra.plugin.scripts.exec.scripts.runners.CommandsWrapper;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -130,6 +137,16 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
     )
     @Builder.Default
     private Property<Boolean> logConsole = Property.ofValue(true);
+    
+    private String computeKVEntryName(RunContext runContext, String stateName, String taskRunValue) {
+        String separator = "_";
+        boolean flowScoped = true;
+        boolean hashTaskRunValue = true;
+
+        String flowId = runContext.flowInfo().id();
+        String flowIdPrefix = (!flowScoped || flowId == null) ? "" : (Slugify.of(flowId) + separator);
+        return flowIdPrefix + "states" + separator + stateName + (taskRunValue == null ? "" : (separator + (hashTaskRunValue ? Hashing.hashToString(taskRunValue) : taskRunValue)));
+    }
 
     @Override
     public ScriptOutput run(RunContext runContext) throws Exception {
@@ -149,13 +166,30 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
         File incrementalDBFile = new File(workingDirectory + "/" + DB_FILENAME);
 
         try {
-            InputStream taskCacheFile = runContext.stateStore().getState(
-                CLOUD_QUERY_STATE,
-                DB_FILENAME,
-                runContext.storage().getTaskStorageContext().map(StorageContext.Task::getTaskRunValue).orElse(null)
-            );
-            Files.copy(taskCacheFile, incrementalDBFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        } catch (FileNotFoundException exception) {
+            String taskRunValue = runContext.storage().getTaskStorageContext().map(StorageContext.Task::getTaskRunValue).orElse(null);
+            String kvEntryName = computeKVEntryName(runContext, CLOUD_QUERY_STATE, taskRunValue);
+
+            KVStore kvStore = runContext.namespaceKv(runContext.flowInfo().namespace());
+            Optional<KVValue> kvValue = kvStore.getValue(kvEntryName);
+
+            if (kvValue.isPresent() && kvValue.get().value() != null) {
+                Object value = kvValue.get().value();
+                byte[] stateData;
+                if (value instanceof byte[]) {
+                    stateData = (byte[]) value;
+                } else if (value instanceof String) {
+                    // Fallback if stored as base64 string or similar
+                    stateData = ((String) value).getBytes();
+                } else {
+                    throw new IOException("Unexpected value type in KV store: " + value.getClass());
+                }
+                Files.write(incrementalDBFile.toPath(), stateData);
+            } else {
+                if (!incrementalDBFile.createNewFile()) {
+                    throw new IOException("Unable to create incremental backend file.");
+                }
+            }
+        } catch (IOException exception) {
             if (!incrementalDBFile.createNewFile()) {
                 throw new IOException("Unable to create incremental backend file.");
             }
@@ -183,12 +217,12 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
 
         ScriptOutput run = commands.run();
         try (FileInputStream fis = new FileInputStream(incrementalDBFile)) {
-            runContext.stateStore().putState(
-                CLOUD_QUERY_STATE,
-                DB_FILENAME,
-                runContext.storage().getTaskStorageContext().map(StorageContext.Task::getTaskRunValue).orElse(null),
-                fis.readAllBytes()
-            );
+            String taskRunValue = runContext.storage().getTaskStorageContext().map(StorageContext.Task::getTaskRunValue).orElse(null);
+            String kvEntryName = computeKVEntryName(runContext, CLOUD_QUERY_STATE, taskRunValue);
+
+            KVStore kvStore = runContext.namespaceKv(runContext.flowInfo().namespace());
+            byte[] dbBytes = fis.readAllBytes();
+            kvStore.put(kvEntryName, new KVValueAndMetadata(null, dbBytes));
         }
         return run;
     }
