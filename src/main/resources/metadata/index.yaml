@@ -1,8 +1,8 @@
 group: io.kestra.plugin.cloudquery
 name: "cloudquery"
 title: "CloudQuery"
-description: "This sub-group of plugins contains tasks for using CloudQuery CLI."
-body: ""
+description: "Tasks that run CloudQuery commands to sync data through the CLI."
+body: "Use these tasks to execute CloudQuery syncs from inline YAML or config files, optionally persisting incremental state in Kestra's KV Store for reliable resumes. CloudQueryCLI runs arbitrary commands with configurable env, container image, and input/output files."
 videos: []
 createdBy: "Kestra Core Team"
 managedBy: "Kestra Core Team"
