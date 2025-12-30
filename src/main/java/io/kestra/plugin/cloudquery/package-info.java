@@ -1,6 +1,6 @@
 @PluginSubGroup(
         description = "This sub-group of plugins contains tasks for using CloudQuery CLI.",
-        categories = { PluginSubGroup.PluginCategory.TOOL }
+                categories = { PluginSubGroup.PluginCategory.DATA }
 )
 package io.kestra.plugin.cloudquery;
 
