@@ -30,7 +30,8 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Execute a CloudQuery command from CLI."
+    title = "Run CloudQuery CLI commands",
+    description = "Executes provided CloudQuery CLI commands in order using /bin/sh -c inside the task runner container; honors rendered env vars and input files."
 )
 @Plugin(
     examples = {
@@ -80,7 +81,8 @@ import java.util.List;
 public class CloudQueryCLI extends AbstractCloudQueryCommand implements RunnableTask<ScriptOutput>, NamespaceFilesInterface, InputFilesInterface, OutputFilesInterface {
 
     @Schema(
-        title = "List of CloudQuery commands to run."
+        title = "Commands to execute",
+        description = "Shell commands executed sequentially; include the cloudquery binary (aliased to /app/cloudquery) and any arguments."
     )
     @NotNull
     protected Property<List<String>> commands;
