@@ -43,7 +43,8 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Execute a CloudQuery sync."
+    title = "Run a CloudQuery sync",
+    description = "Renders CloudQuery configs to temp YAML files and runs `cloudquery sync`; can persist incremental state in Kestra KV and enables console logging by default."
 )
 @Plugin(
     examples = {
@@ -109,8 +110,8 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
     private static final String CLOUD_QUERY_STATE = "CloudQueryState";
 
     @Schema(
-        title = "CloudQuery configurations.",
-        description = "A list of CloudQuery configurations or files containing CloudQuery configurations.",
+        title = "CloudQuery sync configurations",
+        description = "Inline configs or file/URI paths rendered by Kestra and written to temporary YAML files passed to `cloudquery sync`.",
         anyOf = { String.class, List.class, Map.class }
     )
     @PluginProperty
@@ -118,9 +119,8 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
     private List<Object> configs;
 
     @Schema(
-        title = "Whether to use Kestra's internal KV Store backend to save incremental index.",
-        description = "Kestra can automatically add a backend option to your sources and store the incremental indexes in the KV Store. " +
-            "Use this boolean to activate this option."
+        title = "Store incremental state in Kestra KV",
+        description = "When true (default false), adds CloudQuery backend_options and saves the SQLite state file to the namespace KV store for reuse."
     )
     @Builder.Default
     private Property<Boolean> incremental = Property.ofValue(false);
@@ -132,8 +132,8 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
     private Property<List<String>> outputFiles;
 
     @Schema(
-        title = "Enable console logging",
-        description = "Whether to enable verbose console logging from CloudQuery."
+        title = "Enable CloudQuery console logs",
+        description = "Adds the --log-console flag; enabled by default."
     )
     @Builder.Default
     private Property<Boolean> logConsole = Property.ofValue(true);
