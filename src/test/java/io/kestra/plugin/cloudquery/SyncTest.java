@@ -1,15 +1,9 @@
 package io.kestra.plugin.cloudquery;
 
-import io.kestra.core.models.property.Property;
-import io.kestra.core.runners.RunContext;
-import io.kestra.core.runners.RunContextFactory;
-import io.kestra.core.utils.IdUtils;
-import io.kestra.core.utils.TestsUtils;
-import io.kestra.plugin.scripts.exec.scripts.models.DockerOptions;
-import io.kestra.plugin.scripts.exec.scripts.models.ScriptOutput;
-import io.kestra.core.junit.annotations.KestraTest;
-import io.kestra.plugin.scripts.runner.docker.Docker;
-import jakarta.inject.Inject;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -17,9 +11,16 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.runners.RunContext;
+import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.utils.IdUtils;
+import io.kestra.core.utils.TestsUtils;
+import io.kestra.plugin.scripts.exec.scripts.models.ScriptOutput;
+import io.kestra.plugin.scripts.runner.docker.Docker;
+
+import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -45,58 +46,65 @@ class SyncTest {
         }
     }
 
-
     @Test
     void run() throws Exception {
 
         Sync execute = Sync.builder()
             .id(IdUtils.create())
             .type(Sync.class.getName())
-            .env(Property.ofValue(Map.of(
-                "AWS_ACCESS_KEY_ID", localstack.getAccessKey(),
-                "AWS_SECRET_ACCESS_KEY", localstack.getSecretKey(),
-                "AWS_DEFAULT_REGION", localstack.getRegion()
-            )))
-            .configs(List.of(
-                Map.of(
-                    "kind", "destination",
-                    "spec", Map.of(
-                        "name", "file",
-                        "path", "cloudquery/file",
-                        "version", "v3.4.8",
-                        "spec", Map.of(
-                            "path", "./{{TABLE}}-{{UUID}}.{{FORMAT}}",
-                            "format", "json"
-                        )
+            .env(
+                Property.ofValue(
+                    Map.of(
+                        "AWS_ACCESS_KEY_ID", localstack.getAccessKey(),
+                        "AWS_SECRET_ACCESS_KEY", localstack.getSecretKey(),
+                        "AWS_DEFAULT_REGION", localstack.getRegion()
                     )
-                ),
-                Map.of(
-                    "kind", "source",
-                    "spec", Map.of(
-                        "name", "aws",
-                        "registry", "github",
-                        "path", "cloudquery/aws",
-                        "version", "v22.14.0",
-                        "tables", List.of("aws_s3*"),
-                        "destinations", List.of("file"),
+                )
+            )
+            .configs(
+                List.of(
+                    Map.of(
+                        "kind", "destination",
                         "spec", Map.of(
-                            "regions", List.of(localstack.getRegion()),
-                            "custom_endpoint_url", localstack.getEndpoint().toString(),
-                            "custom_endpoint_hostname_immutable", true,
-                            "custom_endpoint_partition_id", "aws",
-                            "custom_endpoint_signing_region", localstack.getRegion(),
-                            "max_retries", "0"
+                            "name", "file",
+                            "path", "cloudquery/file",
+                            "version", "v3.4.8",
+                            "spec", Map.of(
+                                "path", "./{{TABLE}}-{{UUID}}.{{FORMAT}}",
+                                "format", "json"
+                            )
+                        )
+                    ),
+                    Map.of(
+                        "kind", "source",
+                        "spec", Map.of(
+                            "name", "aws",
+                            "registry", "github",
+                            "path", "cloudquery/aws",
+                            "version", "v22.14.0",
+                            "tables", List.of("aws_s3*"),
+                            "destinations", List.of("file"),
+                            "spec", Map.of(
+                                "regions", List.of(localstack.getRegion()),
+                                "custom_endpoint_url", localstack.getEndpoint().toString(),
+                                "custom_endpoint_hostname_immutable", true,
+                                "custom_endpoint_partition_id", "aws",
+                                "custom_endpoint_signing_region", localstack.getRegion(),
+                                "max_retries", "0"
+                            )
                         )
                     )
                 )
-            ))
+            )
             .incremental(Property.ofValue(false))// TODO Disabled incremental as there is a bug with sqlite inside cloudquery docker
-            .taskRunner(Docker.builder()
+            .taskRunner(
+                Docker.builder()
                     .type(Docker.class.getName())
-                // needed to be able to reach localstack from inside the container
-                .networkMode("host")
-                .entryPoint(Collections.emptyList())
-                .build())
+                    // needed to be able to reach localstack from inside the container
+                    .networkMode("host")
+                    .entryPoint(Collections.emptyList())
+                    .build()
+            )
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, execute, Map.of());

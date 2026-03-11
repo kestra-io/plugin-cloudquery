@@ -1,18 +1,19 @@
 package io.kestra.plugin.cloudquery;
 
+import java.util.Collections;
+import java.util.Map;
+
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.models.tasks.runners.TaskRunner;
 import io.kestra.plugin.scripts.exec.scripts.models.DockerOptions;
 import io.kestra.plugin.scripts.runner.docker.Docker;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import java.util.Collections;
-import java.util.Map;
 
 @SuperBuilder
 @ToString

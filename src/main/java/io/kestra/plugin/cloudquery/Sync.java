@@ -1,18 +1,24 @@
 package io.kestra.plugin.cloudquery;
 
+import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
-import io.kestra.core.models.kv.KVType;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.*;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.core.storages.StorageContext;
-import io.kestra.core.storages.kv.KVEntry;
 import io.kestra.core.storages.kv.KVStore;
 import io.kestra.core.storages.kv.KVValue;
 import io.kestra.core.storages.kv.KVValueAndMetadata;
@@ -21,19 +27,11 @@ import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.Slugify;
 import io.kestra.plugin.scripts.exec.scripts.models.ScriptOutput;
 import io.kestra.plugin.scripts.exec.scripts.runners.CommandsWrapper;
+
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import jakarta.validation.constraints.NotNull;
-import java.io.*;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.*;
-import java.util.stream.Collectors;
 
 import static io.kestra.core.utils.Rethrow.throwConsumer;
 
@@ -137,7 +135,7 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
     )
     @Builder.Default
     private Property<Boolean> logConsole = Property.ofValue(true);
-    
+
     private String computeKVEntryName(RunContext runContext, String stateName, String taskRunValue) {
         String separator = "_";
         boolean flowScoped = true;
@@ -203,7 +201,8 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
 
         List<String> cmds = new ArrayList<>(List.of("/app/cloudquery", "sync"));
 
-        configs.forEach(throwConsumer(config -> {
+        configs.forEach(throwConsumer(config ->
+        {
             File confFile = new File(workingDirectory + "/" + IdUtils.create() + ".yml");
             OBJECT_MAPPER.writeValue(confFile, config);
             cmds.add(confFile.getName());
@@ -249,7 +248,8 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
     }
 
     @SuppressWarnings("unchecked")
-    private List<Map<String, Object>> readConfigs(RunContext runContext, List<Object> configurations, Map<String, Object> backendOptionsObject) throws IllegalVariableEvaluationException, URISyntaxException, IOException {
+    private List<Map<String, Object>> readConfigs(RunContext runContext, List<Object> configurations, Map<String, Object> backendOptionsObject)
+        throws IllegalVariableEvaluationException, URISyntaxException, IOException {
         List<Map<String, Object>> results = new ArrayList<>(configurations.size());
         for (Object config : configurations) {
             Map<String, Object> result;
@@ -264,7 +264,6 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
             } else {
                 throw new IllegalVariableEvaluationException("Invalid configs type '" + configs.getClass() + "'");
             }
-
 
             if (runContext.render(incremental).as(Boolean.class).orElseThrow() && Objects.equals(result.get("kind"), "source")) {
                 if (result.containsKey("spec")) {
