@@ -1,0 +1,43 @@
+id: all_cloudquery
+namespace: sanitychecks.plugin-cloudquery
+
+tasks:
+  - id: cli_version
+    type: io.kestra.plugin.cloudquery.CloudQueryCLI
+    outputFiles:
+      - version.txt
+    commands:
+      - cloudquery --version > version.txt
+
+  - id: cli_help
+    type: io.kestra.plugin.cloudquery.CloudQueryCLI
+    env:
+      SANITY_ENV: cloudquery-local
+    inputFiles:
+      marker.txt: sanity check marker
+    outputFiles:
+      - help.txt
+      - sync-help.txt
+      - env.txt
+    commands:
+      - cloudquery --help > help.txt
+      - cloudquery sync --help > sync-help.txt
+      - test -f marker.txt && printf '%s' "$SANITY_ENV" > env.txt
+
+  - id: assert
+    type: io.kestra.plugin.core.execution.Assert
+    conditions:
+      - "{{ outputs.cli_version.exitCode == 0 }}"
+      - "{{ outputs.cli_version.outputFiles['version.txt'] is not null }}"
+      - "{{ read(outputs.cli_version.outputFiles['version.txt']) | trim | length > 0 }}"
+      - "{{ outputs.cli_help.exitCode == 0 }}"
+      - "{{ outputs.cli_help.outputFiles['help.txt'] is not null }}"
+      - "{{ read(outputs.cli_help.outputFiles['help.txt']) contains 'CloudQuery CLI' }}"
+      - "{{ outputs.cli_help.outputFiles['sync-help.txt'] is not null }}"
+      - "{{ read(outputs.cli_help.outputFiles['sync-help.txt']) | trim | length > 0 }}"
+      - "{{ read(outputs.cli_help.outputFiles['sync-help.txt']) contains 'sync' }}"
+      - "{{ read(outputs.cli_help.outputFiles['env.txt']) == 'cloudquery-local' }}"
+
+finally:
+  - id: purge
+    type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
