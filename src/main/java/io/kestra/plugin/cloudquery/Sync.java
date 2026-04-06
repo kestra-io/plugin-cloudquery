@@ -112,7 +112,7 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
         description = "Inline configs or file/URI paths rendered by Kestra and written to temporary YAML files passed to `cloudquery sync`.",
         anyOf = { String.class, List.class, Map.class }
     )
-    @PluginProperty
+    @PluginProperty(group = "main")
     @NotNull
     private List<Object> configs;
 
@@ -121,12 +121,16 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
         description = "When true (default false), adds CloudQuery backend_options and saves the SQLite state file to the namespace KV store for reuse."
     )
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<Boolean> incremental = Property.ofValue(false);
 
+    @PluginProperty(group = "source")
     private NamespaceFiles namespaceFiles;
 
+    @PluginProperty(group = "source")
     private Object inputFiles;
 
+    @PluginProperty(group = "destination")
     private Property<List<String>> outputFiles;
 
     @Schema(
@@ -134,6 +138,7 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
         description = "Adds the --log-console flag; enabled by default."
     )
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<Boolean> logConsole = Property.ofValue(true);
 
     private String computeKVEntryName(RunContext runContext, String stateName, String taskRunValue) {

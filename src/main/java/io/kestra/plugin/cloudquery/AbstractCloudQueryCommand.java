@@ -27,13 +27,14 @@ abstract class AbstractCloudQueryCommand extends Task {
         title = "Set CloudQuery environment variables",
         description = "Key-value pairs rendered by Kestra and passed to the CloudQuery process; empty by default."
     )
+    @PluginProperty(group = "execution")
     protected Property<Map<String, String>> env;
 
     @Schema(
         title = "Deprecated Docker runner options",
         description = "Replaced by 'taskRunner'; keep only for legacy flows."
     )
-    @PluginProperty
+    @PluginProperty(group = "execution")
     @Deprecated
     private DockerOptions docker;
 
@@ -42,7 +43,7 @@ abstract class AbstractCloudQueryCommand extends Task {
         description = """
             Defaults to the Docker runner with an empty entrypoint. If you switch runners, ensure the entrypoint suits the CloudQuery binary."""
     )
-    @PluginProperty
+    @PluginProperty(group = "execution")
     @Builder.Default
     @Valid
     private TaskRunner<?> taskRunner = Docker.builder()
@@ -55,6 +56,7 @@ abstract class AbstractCloudQueryCommand extends Task {
         description = "Used when the selected task runner is container-based; defaults to ghcr.io/cloudquery/cloudquery:latest."
     )
     @Builder.Default
+    @PluginProperty(group = "execution")
     private Property<String> containerImage = Property.ofValue(DEFAULT_IMAGE);
 
     protected DockerOptions injectDefaults(DockerOptions original) {
