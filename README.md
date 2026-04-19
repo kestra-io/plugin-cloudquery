@@ -37,10 +37,16 @@
 
 # Kestra CloudQuery Plugin
 
-Plugin to interact with CloudQuery
+## Why
 
-![Kestra orchestrator](https://kestra.io/video.gif)
+- What user problem does this solve? Teams need to run CloudQuery commands to sync data through the CLI from orchestrated workflows instead of relying on manual console work, ad hoc scripts, or disconnected schedulers.
+- Why would a team adopt this plugin in a workflow? It keeps CloudQuery steps in the same Kestra flow as upstream preparation, approvals, retries, notifications, and downstream systems.
+- What operational/business outcome does it enable? It reduces manual handoffs and fragmented tooling while improving reliability, traceability, and delivery speed for processes that depend on CloudQuery.
 
+## What
+
+- Provides plugin components under `io.kestra.plugin.cloudquery`.
+- Includes classes such as `Sync`, `CloudQueryCLI`.
 
 ## Documentation
 * Full documentation can be found under [kestra.io/docs](https://kestra.io/docs)
