@@ -21,7 +21,7 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 abstract class AbstractCloudQueryCommand extends Task {
-    protected static final String DEFAULT_IMAGE = "ghcr.io/cloudquery/cloudquery:latest";
+    protected static final String DEFAULT_IMAGE = "ghcr.io/cloudquery/cloudquery:latest-ubuntu";
 
     @Schema(
         title = "Set CloudQuery environment variables",
@@ -53,7 +53,7 @@ abstract class AbstractCloudQueryCommand extends Task {
 
     @Schema(
         title = "Container image for CloudQuery runner",
-        description = "Used when the selected task runner is container-based; defaults to ghcr.io/cloudquery/cloudquery:latest."
+        description = "Container image used by the task runner. Defaults to the Ubuntu variant so destinations like DuckDB work out of the box. Set to ghcr.io/cloudquery/cloudquery:latest for the smaller Alpine image."
     )
     @Builder.Default
     @PluginProperty(group = "execution")
