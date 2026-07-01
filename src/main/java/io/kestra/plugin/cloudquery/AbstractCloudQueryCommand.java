@@ -28,6 +28,7 @@ abstract class AbstractCloudQueryCommand extends Task {
         description = "Key-value pairs rendered by Kestra and passed to the CloudQuery process; empty by default."
     )
     @PluginProperty(group = "execution")
+    @ToString.Exclude
     protected Property<Map<String, String>> env;
 
     @Schema(
