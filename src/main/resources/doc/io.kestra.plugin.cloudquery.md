@@ -10,4 +10,4 @@ Pass credentials via the `env` map — at minimum set `CLOUDQUERY_API_KEY` (requ
 
 `Sync` runs a CloudQuery sync from a set of source/destination configs — set `configs` (required, a list of CloudQuery source and destination configuration objects). Set `incremental: true` to persist state between runs (default `false`). The task runs in a container (default image `ghcr.io/cloudquery/cloudquery:latest-ubuntu`). Use `namespaceFiles` to reference [namespace files](https://kestra.io/docs/concepts/namespace-files), `inputFiles` to stage additional files, and `outputFiles` to retrieve results.
 
-`CloudQueryCLI` runs arbitrary CloudQuery CLI commands — set `commands` (required). Use `beforeCommands`, `env`, `namespaceFiles`, `inputFiles`, and `outputFiles` the same way as `Sync`.
+`CloudQueryCLI` runs arbitrary CloudQuery CLI commands — set `commands` (required). Use `env`, `namespaceFiles`, `inputFiles`, and `outputFiles` the same way as `Sync`.

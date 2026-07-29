@@ -1,4 +1,5 @@
 @PluginSubGroup(
+    title = "CloudQuery",
     description = "This sub-group of plugins contains tasks for using CloudQuery CLI.",
     categories = { PluginSubGroup.PluginCategory.DATA }
 )
