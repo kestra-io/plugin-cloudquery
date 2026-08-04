@@ -61,15 +61,15 @@ import io.kestra.core.models.annotations.PluginProperty;
                           spec:
                             item_concurrency: 100
                             start_time: "{{ now() | dateAdd(-1, 'DAYS') }}"
-                          ---
-                          kind: destination
+                        ---
+                        kind: destination
+                        spec:
+                          name: duckdb
+                          path: cloudquery/duckdb
+                          version: v4.2.10
+                          write_mode: overwrite-delete-stale
                           spec:
-                            name: duckdb
-                            path: cloudquery/duckdb
-                            version: v4.2.10
-                            write_mode: overwrite-delete-stale
-                            spec:
-                              connection_string: hn.db
+                            connection_string: hn.db
                     commands:
                       - cloudquery sync config.yml --log-console"""
         )
