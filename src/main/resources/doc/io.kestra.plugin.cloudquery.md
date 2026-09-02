@@ -4,7 +4,7 @@ Sync cloud infrastructure data across sources and destinations using CloudQuery 
 
 ## Authentication
 
-Pass credentials via the `env` map — at minimum set `CLOUDQUERY_API_KEY` (required to download CloudQuery plugins). Add provider-specific variables (e.g. `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `PG_CONNECTION_STRING`) for each source and destination. Store secrets in [secrets](https://kestra.io/docs/concepts/secret) and apply connection properties globally with [plugin defaults](https://kestra.io/docs/workflow-components/plugin-defaults).
+Pass credentials via the `env` map — at minimum set `CLOUDQUERY_API_KEY` (required to download CloudQuery plugins). Add provider-specific variables (e.g. `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `PG_CONNECTION_STRING`) for each source and destination. Store secrets in [secrets](https://kestra.io/docs/concepts/secret) and set connection properties on each task.
 
 ## Tasks
 
