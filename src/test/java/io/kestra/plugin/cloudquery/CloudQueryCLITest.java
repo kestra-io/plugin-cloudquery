@@ -1,5 +1,7 @@
 package io.kestra.plugin.cloudquery;
 
+import java.io.ByteArrayInputStream;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -8,6 +10,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.NamespaceFiles;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.IdUtils;
@@ -54,5 +57,30 @@ class CloudQueryCLITest {
         assertThat(runOutput.getExitCode(), is(0));
         assertThat(runOutput.getVars().get("customEnv"), is(envValue));
 
+    }
+
+    @Test
+    void namespaceFiles() throws Exception {
+        CloudQueryCLI execute = CloudQueryCLI.builder()
+            .id(IdUtils.create())
+            .type(CloudQueryCLI.class.getName())
+            .namespaceFiles(
+                NamespaceFiles.builder()
+                    .enabled(Property.ofValue(true))
+                    .build()
+            )
+            .commands(Property.ofValue(List.of("test -f config.yml")))
+            .build();
+
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, execute, Map.of());
+
+        runContext.storage().namespace().putFile(
+            Path.of("config.yml"),
+            new ByteArrayInputStream("kind: source".getBytes())
+        );
+
+        ScriptOutput runOutput = execute.run(runContext);
+
+        assertThat(runOutput.getExitCode(), is(0));
     }
 }

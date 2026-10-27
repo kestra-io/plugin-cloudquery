@@ -106,6 +106,7 @@ public class CloudQueryCLI extends AbstractCloudQueryCommand implements Runnable
             .withBeforeCommands(Property.ofValue(List.of("alias cloudquery='/app/cloudquery'")))
             .withCommands(this.commands)
             .withEnv(runContext.render(this.getEnv()).asMap(String.class, String.class).isEmpty() ? new HashMap<>() : runContext.render(this.getEnv()).asMap(String.class, String.class))
+            .withNamespaceFiles(namespaceFiles)
             .withInputFiles(inputFiles)
             .withOutputFiles(renderedOutputFiles.isEmpty() ? null : renderedOutputFiles);
 
