@@ -26,7 +26,6 @@ import io.kestra.core.utils.Hashing;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.Slugify;
 import io.kestra.plugin.scripts.exec.scripts.models.ScriptOutput;
-import io.kestra.plugin.scripts.exec.scripts.runners.CommandsWrapper;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -102,7 +101,7 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
         )
     }
 )
-public class Sync extends AbstractCloudQueryCommand implements RunnableTask<ScriptOutput>, NamespaceFilesInterface, InputFilesInterface, OutputFilesInterface {
+public class Sync extends AbstractCloudQueryCommand implements RunnableTask<ScriptOutput> {
     private static final ObjectMapper OBJECT_MAPPER = JacksonMapper.ofYaml();
     private static final String DB_FILENAME = "incrementaldb.sqlite";
     private static final String CLOUD_QUERY_STATE = "CloudQueryState";
@@ -124,15 +123,6 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
     @PluginProperty(group = "advanced")
     private Property<Boolean> incremental = Property.ofValue(false);
 
-    @PluginProperty(group = "source")
-    private NamespaceFiles namespaceFiles;
-
-    @PluginProperty(group = "source")
-    private Object inputFiles;
-
-    @PluginProperty(group = "destination")
-    private Property<List<String>> outputFiles;
-
     @Schema(
         title = "Enable CloudQuery console logs",
         description = "Adds the --log-console flag; enabled by default."
@@ -153,16 +143,7 @@ public class Sync extends AbstractCloudQueryCommand implements RunnableTask<Scri
 
     @Override
     public ScriptOutput run(RunContext runContext) throws Exception {
-        var renderedOutputFiles = runContext.render(this.outputFiles).asList(String.class);
-
-        CommandsWrapper commands = new CommandsWrapper(runContext)
-            .withDockerOptions(injectDefaults(getDocker()))
-            .withTaskRunner(this.getTaskRunner())
-            .withContainerImage(runContext.render(this.getContainerImage()).as(String.class).orElseThrow())
-            .withEnv(runContext.render(this.getEnv()).asMap(String.class, String.class).isEmpty() ? new HashMap<>() : runContext.render(this.getEnv()).asMap(String.class, String.class))
-            .withNamespaceFiles(namespaceFiles)
-            .withInputFiles(inputFiles)
-            .withOutputFiles(renderedOutputFiles.isEmpty() ? null : renderedOutputFiles);
+        var commands = commands(runContext);
 
         Path workingDirectory = commands.getWorkingDirectory();
 

@@ -1,16 +1,16 @@
 package io.kestra.plugin.cloudquery;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.property.Property;
-import io.kestra.core.models.tasks.*;
+import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.scripts.exec.scripts.models.DockerOptions;
 import io.kestra.plugin.scripts.exec.scripts.models.ScriptOutput;
-import io.kestra.plugin.scripts.exec.scripts.runners.CommandsWrapper;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -75,7 +75,7 @@ import io.kestra.core.models.annotations.PluginProperty;
         )
     }
 )
-public class CloudQueryCLI extends AbstractCloudQueryCommand implements RunnableTask<ScriptOutput>, NamespaceFilesInterface, InputFilesInterface, OutputFilesInterface {
+public class CloudQueryCLI extends AbstractCloudQueryCommand implements RunnableTask<ScriptOutput> {
 
     @Schema(
         title = "Commands to execute",
@@ -85,36 +85,22 @@ public class CloudQueryCLI extends AbstractCloudQueryCommand implements Runnable
     @PluginProperty(group = "main")
     protected Property<List<String>> commands;
 
-    @PluginProperty(group = "source")
-    private NamespaceFiles namespaceFiles;
-
-    @PluginProperty(group = "source")
-    private Object inputFiles;
-
-    @PluginProperty(group = "destination")
-    private Property<List<String>> outputFiles;
-
     @Override
     public ScriptOutput run(RunContext runContext) throws Exception {
-        var renderedOutputFiles = runContext.render(this.outputFiles).asList(String.class);
-        CommandsWrapper commands = new CommandsWrapper(runContext)
-            .withWarningOnStdErr(true)
-            .withDockerOptions(injectDefaults(getDocker()))
-            .withTaskRunner(this.getTaskRunner())
-            .withContainerImage(runContext.render(this.getContainerImage()).as(String.class).orElseThrow())
-            .withInterpreter(Property.ofValue(List.of("/bin/sh", "-c")))
-            .withBeforeCommands(Property.ofValue(List.of("alias cloudquery='/app/cloudquery'")))
-            .withCommands(this.commands)
-            .withEnv(runContext.render(this.getEnv()).asMap(String.class, String.class).isEmpty() ? new HashMap<>() : runContext.render(this.getEnv()).asMap(String.class, String.class))
-            .withNamespaceFiles(namespaceFiles)
-            .withInputFiles(inputFiles)
-            .withOutputFiles(renderedOutputFiles.isEmpty() ? null : renderedOutputFiles);
+        var rBeforeCommands = new ArrayList<>(List.of("alias cloudquery='/app/cloudquery'"));
+        rBeforeCommands.addAll(runContext.render(this.getBeforeCommands()).asList(String.class));
+
+        var commands = commands(runContext)
+            .withWarningOnStdErr(runContext.render(this.getWarningOnStdErr()).as(Boolean.class).orElse(true))
+            .withInterpreter(this.getInterpreter())
+            .withBeforeCommands(Property.ofValue(rBeforeCommands))
+            .withCommands(this.commands);
 
         return commands.run();
     }
 
     @Override
-    protected DockerOptions injectDefaults(DockerOptions original) {
+    protected DockerOptions injectDefaults(RunContext runContext, DockerOptions original) throws IllegalVariableEvaluationException {
         if (original == null) {
             return null;
         }
@@ -122,6 +108,6 @@ public class CloudQueryCLI extends AbstractCloudQueryCommand implements Runnable
         if (original.getEntryPoint() == null || original.getEntryPoint().isEmpty()) {
             original = original.toBuilder().entryPoint(List.of("")).build();
         }
-        return super.injectDefaults(original);
+        return super.injectDefaults(runContext, original);
     }
 }

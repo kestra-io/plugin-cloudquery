@@ -23,6 +23,8 @@ import io.kestra.plugin.scripts.runner.docker.Docker;
 import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
 @KestraTest
@@ -114,4 +116,18 @@ class SyncTest {
         assertThat(runOutput.getExitCode(), is(0));
     }
 
+    @Test
+    void defaultsToDockerWithEmptyEntrypoint() throws Exception {
+        var task = Sync.builder()
+            .id(IdUtils.create())
+            .type(Sync.class.getName())
+            .configs(List.of(Map.of("kind", "source")))
+            .build();
+
+        assertThat(task.getTaskRunner(), instanceOf(Docker.class));
+        assertThat(((Docker) task.getTaskRunner()).getEntryPoint(), is(empty()));
+
+        var runContext = TestsUtils.mockRunContext(runContextFactory, task, Map.of());
+        assertThat(runContext.render(task.getContainerImage()).as(String.class).orElseThrow(), is("ghcr.io/cloudquery/cloudquery:latest-ubuntu"));
+    }
 }
