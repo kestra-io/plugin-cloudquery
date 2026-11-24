@@ -15,6 +15,7 @@ import io.kestra.plugin.scripts.exec.scripts.models.ScriptOutput;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,7 +29,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @Schema(
     title = "Run CloudQuery CLI commands",
-    description = "Executes provided CloudQuery CLI commands in order using /bin/sh -c inside the task runner container; honors rendered env vars and input files."
+    description = "Executes provided CloudQuery CLI commands in order using /bin/sh -c inside the task runner container; honors rendered env vars and input files. The inherited `warningOnStdErr` property has no effect."
 )
 @Plugin(
     examples = {
@@ -85,13 +86,26 @@ public class CloudQueryCLI extends AbstractCloudQueryCommand implements Runnable
     @PluginProperty(group = "main")
     protected Property<List<String>> commands;
 
+    @Schema(
+        title = "Fail fast on the first failing command",
+        description = """
+            If true, `set -e` is prepended to `beforeCommands`, so the first failing line stops the run.
+            Defaults to false, so a failing `beforeCommands` line does not stop the run.
+            """
+    )
+    @Builder.Default
+    @PluginProperty(group = "execution")
+    protected Property<Boolean> failFast = Property.ofValue(false);
+
     @Override
     public ScriptOutput run(RunContext runContext) throws Exception {
-        var rBeforeCommands = new ArrayList<>(List.of("alias cloudquery='/app/cloudquery'"));
-        rBeforeCommands.addAll(runContext.render(this.getBeforeCommands()).asList(String.class));
+        var wrapper = commands(runContext);
 
-        var commands = commands(runContext)
-            .withWarningOnStdErr(runContext.render(this.getWarningOnStdErr()).as(Boolean.class).orElse(true))
+        var rBeforeCommands = new ArrayList<>(List.of("alias cloudquery='/app/cloudquery'"));
+        rBeforeCommands.addAll(wrapper.renderCommands(runContext, this.getBeforeCommands()));
+
+        var commands = wrapper
+            .withBeforeCommandsWithOptions(true)
             .withInterpreter(this.getInterpreter())
             .withBeforeCommands(Property.ofValue(rBeforeCommands))
             .withCommands(this.commands);

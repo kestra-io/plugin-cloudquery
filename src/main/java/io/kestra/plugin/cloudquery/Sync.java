@@ -41,7 +41,7 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
 @NoArgsConstructor
 @Schema(
     title = "Run a CloudQuery sync",
-    description = "Renders CloudQuery configs to temp YAML files and runs `cloudquery sync`; can persist incremental state in Kestra KV and enables console logging by default."
+    description = "Renders CloudQuery configs to temp YAML files and runs `cloudquery sync`; can persist incremental state in Kestra KV and enables console logging by default. The inherited `beforeCommands`, `interpreter`, `failFast` and `warningOnStdErr` properties are accepted but ignored."
 )
 @Plugin(
     examples = {

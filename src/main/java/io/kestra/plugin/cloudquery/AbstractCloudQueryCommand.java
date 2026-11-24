@@ -9,6 +9,7 @@ import io.kestra.core.models.tasks.runners.TaskRunner;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.scripts.exec.AbstractExecScript;
 import io.kestra.plugin.scripts.exec.scripts.models.DockerOptions;
+import io.kestra.plugin.scripts.exec.scripts.runners.CommandsWrapper;
 import io.kestra.plugin.scripts.runner.docker.Docker;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -44,6 +45,21 @@ abstract class AbstractCloudQueryCommand extends AbstractExecScript {
     @Builder.Default
     @PluginProperty(group = "execution")
     private Property<String> containerImage = Property.ofValue(DEFAULT_IMAGE);
+
+    // Own copy: AbstractExecScript has no docker field from 2.0, flows still setting it would be rejected
+    @Schema(
+        title = "Deprecated Docker options",
+        description = "Use taskRunner instead; kept for backward compatibility."
+    )
+    @PluginProperty(group = "deprecated")
+    @Deprecated
+    private DockerOptions docker;
+
+    @Override
+    protected CommandsWrapper commands(RunContext runContext) throws IllegalVariableEvaluationException {
+        var wrapper = super.commands(runContext);
+        return docker == null ? wrapper : wrapper.withDockerOptions(injectDefaults(runContext, docker));
+    }
 
     @Override
     protected DockerOptions injectDefaults(RunContext runContext, DockerOptions original) throws IllegalVariableEvaluationException {

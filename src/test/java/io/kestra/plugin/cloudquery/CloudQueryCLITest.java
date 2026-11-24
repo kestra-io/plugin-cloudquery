@@ -124,4 +124,24 @@ class CloudQueryCLITest {
         assertThat(runOutput.getExitCode(), is(0));
         assertThat(runOutput.getVars().get("before"), is("ok"));
     }
+
+    @Test
+    void beforeCommandsCanUseWorkingDir() throws Exception {
+        var execute = CloudQueryCLI.builder()
+            .id(IdUtils.create())
+            .type(CloudQueryCLI.class.getName())
+            .beforeCommands(Property.ofValue(List.of("cd {{ workingDir }}", "export MY_BEFORE=ok")))
+            .commands(
+                TestsUtils.propertyFromList(
+                    List.of("echo \"::{\\\"outputs\\\":{\\\"before\\\":\\\"$MY_BEFORE\\\"}}::\"")
+                )
+            )
+            .build();
+
+        var runContext = TestsUtils.mockRunContext(runContextFactory, execute, Map.of());
+        var runOutput = execute.run(runContext);
+
+        assertThat(runOutput.getExitCode(), is(0));
+        assertThat(runOutput.getVars().get("before"), is("ok"));
+    }
 }
