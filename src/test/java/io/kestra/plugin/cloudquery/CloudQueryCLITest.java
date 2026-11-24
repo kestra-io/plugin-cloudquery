@@ -16,10 +16,13 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
 import io.kestra.plugin.scripts.exec.scripts.models.ScriptOutput;
+import io.kestra.plugin.scripts.runner.docker.Docker;
 
 import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
 @KestraTest
@@ -82,5 +85,63 @@ class CloudQueryCLITest {
         ScriptOutput runOutput = execute.run(runContext);
 
         assertThat(runOutput.getExitCode(), is(0));
+    }
+
+    @Test
+    void defaultsToDockerWithEmptyEntrypoint() throws Exception {
+        var task = CloudQueryCLI.builder()
+            .id(IdUtils.create())
+            .type(CloudQueryCLI.class.getName())
+            .commands(Property.ofValue(List.of("cloudquery --version")))
+            .build();
+
+        assertThat(task.getTaskRunner(), instanceOf(Docker.class));
+        assertThat(((Docker) task.getTaskRunner()).getEntryPoint(), is(empty()));
+
+        var runContext = TestsUtils.mockRunContext(runContextFactory, task, Map.of());
+        assertThat(runContext.render(task.getContainerImage()).as(String.class).orElseThrow(), is("ghcr.io/cloudquery/cloudquery:latest-ubuntu"));
+    }
+
+    @Test
+    void aliasKeptWithUserBeforeCommands() throws Exception {
+        var execute = CloudQueryCLI.builder()
+            .id(IdUtils.create())
+            .type(CloudQueryCLI.class.getName())
+            .beforeCommands(Property.ofValue(List.of("export MY_BEFORE=ok")))
+            .commands(
+                TestsUtils.propertyFromList(
+                    List.of(
+                        "echo \"::{\\\"outputs\\\":{\\\"before\\\":\\\"$MY_BEFORE\\\"}}::\"",
+                        "cloudquery --version --log-console"
+                    )
+                )
+            )
+            .build();
+
+        var runContext = TestsUtils.mockRunContext(runContextFactory, execute, Map.of());
+        var runOutput = execute.run(runContext);
+
+        assertThat(runOutput.getExitCode(), is(0));
+        assertThat(runOutput.getVars().get("before"), is("ok"));
+    }
+
+    @Test
+    void beforeCommandsCanUseWorkingDir() throws Exception {
+        var execute = CloudQueryCLI.builder()
+            .id(IdUtils.create())
+            .type(CloudQueryCLI.class.getName())
+            .beforeCommands(Property.ofValue(List.of("cd {{ workingDir }}", "export MY_BEFORE=ok")))
+            .commands(
+                TestsUtils.propertyFromList(
+                    List.of("echo \"::{\\\"outputs\\\":{\\\"before\\\":\\\"$MY_BEFORE\\\"}}::\"")
+                )
+            )
+            .build();
+
+        var runContext = TestsUtils.mockRunContext(runContextFactory, execute, Map.of());
+        var runOutput = execute.run(runContext);
+
+        assertThat(runOutput.getExitCode(), is(0));
+        assertThat(runOutput.getVars().get("before"), is("ok"));
     }
 }
